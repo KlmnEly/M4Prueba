@@ -1,32 +1,87 @@
-// Importa las librerías necesarias
-import cors from 'cors';
 import express from 'express';
-// Importa la conexión a la base de datos
-import pool from './connection.js';
-// Importa las rutas de la API
-import clientsRoutes from './routes/clientsRoutes.js'; // Asegúrate de que esta ruta es correcta
+import cors from 'cors';
+import mysql from 'mysql2';
 
 const app = express();
-
-// --- Configuración de middlewares ---
-// Permite que la API sea consumida por aplicaciones en diferentes dominios
 app.use(cors());
-// Middleware CRUCIAL: Permite a Express analizar el cuerpo de las peticiones JSON
 app.use(express.json());
 
-// --- Configuración de rutas ---
-const PORT = 3000;
-const api_version = '/api/v1';
-
-// Ruta de prueba
-app.get(`${api_version}`, async (req, res) => {
-    res.send('Server online');
+// Database connection
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'Qwe.123*',
+    database: 'pd_kelmin_miranda_tayrona'
 });
 
-// Usa las rutas de los clientes
-app.use(`${api_version}/clients`, clientsRoutes);
+db.connect(err => {
+    if (err) {
+        console.error('Database connection failed:', err);
+        process.exit(1);
+    }
+    console.log('Connected to database');
+});
 
-// Escucha en el puerto especificado
+// ------------------- CRUD for Clients -------------------
+
+// Create
+app.post('/api/v1/clients', (req, res) => {
+    const { name, identification, address, phone_number, email } = req.body;
+    if (!name || !identification || !address || !phone_number || !email) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+    db.query(
+        'INSERT INTO clients (name, identification, address, phone_number, email) VALUES (?, ?, ?, ?, ?)',
+        [name, identification, address, phone_number, email],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id_client: result.insertId, name, identification, address, phone_number, email });
+        }
+    );
+});
+
+// Read all
+app.get('/api/v1/clients', (req, res) => {
+    db.query('SELECT * FROM clients', (err, results) => {
+        if (err) {
+            console.error("SQL Error:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(results);
+    });
+});
+
+// Read one
+app.get('/api/v1/clients/:id', (req, res) => {
+    db.query('SELECT * FROM clients WHERE id_client = ?', [req.params.id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results[0]);
+    });
+});
+
+// Update
+app.put('/api/v1/clients/:id', (req, res) => {
+    const { name, identification, address, phone_number, email } = req.body;
+    db.query(
+        'UPDATE clients SET name=?, identification=?, address=?, phone_number=?, email=? WHERE id_client=?',
+        [name, identification, address, phone_number, email, req.params.id],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Client updated successfully' });
+        }
+    );
+});
+
+// Delete
+app.delete('/api/v1/clients/:id', (req, res) => {
+    db.query('DELETE FROM clients WHERE id_client=?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Client deleted successfully' });
+    });
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
