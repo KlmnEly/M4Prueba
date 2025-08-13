@@ -1,0 +1,23 @@
+{
+  "name": "m4prueba",
+  "private": true,
+  "version": "0.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "vite node server/server.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed": "node server/seeders/run_seeders.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "mysql2": "^3.14.3",
+    "path": "^0.12.7"
+  }
+}
